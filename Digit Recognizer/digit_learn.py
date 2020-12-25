@@ -17,7 +17,7 @@ test_csv = "test.csv"
 # learning rate
 learning_rate = 0.001
 # max epoch
-epochs = 10
+epochs = 30
 # batch size
 batchSize = 32
 # model save each step
