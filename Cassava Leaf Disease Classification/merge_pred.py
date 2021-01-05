@@ -14,12 +14,12 @@ import numpy as np
 
 
 # ------------------------------------config------------------------------------
-test_path = "test_images/"
-efficient_model = "effcientnet_model.pth"
-efficient_rate = 0.34
-res_model = "resnet_model.pth"
+test_path = "../input/cassava-leaf-disease-classification/test_images/"
+efficient_model = "../input/leaf-disease-model/effcientnet_model.pth"
+efficient_rate = 0.7
+res_model = "../input/leaf-disease-model/resnet_model.pth"
 res_rate = 1 - efficient_rate
-output_path = ""
+output_path = "./"
 
 # Test config
 # batch size
@@ -92,7 +92,7 @@ def main():
 
     # net model
     # net model
-    efficient_net = EfficientNet.from_name('efficientnet-b0')
+    efficient_net = EfficientNet.from_name('efficientnet-b5')
     efficient_net._fc.out_features = 10
     efficient_net = efficient_net.to(device)
     efficient_net.load_state_dict(torch.load(efficient_model))

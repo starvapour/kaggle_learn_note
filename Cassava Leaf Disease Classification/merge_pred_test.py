@@ -83,7 +83,7 @@ def main():
 
     # net model
     # net model
-    efficient_net = EfficientNet.from_name('efficientnet-b0')
+    efficient_net = EfficientNet.from_name('efficientnet-b5')
     efficient_net._fc.out_features = 10
     efficient_net = efficient_net.to(device)
     efficient_net.load_state_dict(torch.load(efficient_model))
@@ -96,7 +96,7 @@ def main():
     efficient_net.eval()
     res_net.eval()
 
-    for efficient_rate in [0.32, 0.34, 0.36, 0.38]:
+    for efficient_rate in [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]:
         res_rate = 1 - efficient_rate
         with torch.no_grad():
             total_len = 0

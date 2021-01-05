@@ -29,7 +29,7 @@ from_old_model = True
 
 # Train config
 # learning rate
-learning_rate = 0.01
+learning_rate = 0.001
 # max epoch
 epochs = 10
 # batch size
@@ -40,7 +40,7 @@ model_save_step = 10
 '''
 
 # Use how many data of the dataset for val
-proportion_of_val_dataset = 0.1
+proportion_of_val_dataset = 0.3
 
 # output path
 log_name = "log.txt"

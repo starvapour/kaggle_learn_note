@@ -61,7 +61,7 @@ def main():
 
     # net model
     #net = Leaf_net().to(device)
-    net = EfficientNet.from_name('efficientnet-b0')
+    net = EfficientNet.from_name('efficientnet-b5')
     net._fc.out_features = 10
     net = net.to(device)
     net.load_state_dict(torch.load(model_path))
