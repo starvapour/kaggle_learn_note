@@ -17,7 +17,7 @@ from LabelSmoothingLoss import LabelSmoothingLoss
 
 
 # ------------------------------------config------------------------------------
-train_csv = "train.csv"
+train_csv_path = "train.csv"
 train_image = "train_images/"
 preprocessed_image = "train_preprocessed_images/"
 
@@ -25,11 +25,11 @@ preprocessed_image = "train_preprocessed_images/"
 do_preprocessing = False
 
 # continue train from old model
-from_old_model = True
+from_old_model = False
 
 # Train config
 # learning rate
-learning_rate = 0.001
+learning_rate = 0.0001
 # max epoch
 epochs = 10
 # batch size
@@ -44,9 +44,6 @@ proportion_of_val_dataset = 0.3
 
 # output path
 log_name = "log.txt"
-
-# used for debug, set -1 to use all data
-sampler_len = -1
 
 # record best val acc with (epoch_num, acc)
 best_val_acc = (-1, 0)
@@ -78,67 +75,7 @@ class Leaf_train_Dataset(Dataset):
 
     def __len__(self):
         return len(self.csv)
-'''
-# ------------------------------------model------------------------------------
-# the net model
-class Leaf_net(nn.Module):
 
-    def __init__(self):
-        super(Leaf_net, self).__init__()
-
-        # use vgg16 model to get features
-        self.features = nn.Sequential(
-            nn.Conv2d(3, 64, kernel_size=3, padding=1),
-            nn.ReLU(True),
-            nn.Conv2d(64, 64, kernel_size=3, padding=1),
-            nn.ReLU(True),
-            nn.MaxPool2d(kernel_size=2, stride=2),
-            nn.Conv2d(64, 128, kernel_size=3, padding=1),
-            nn.ReLU(True),
-            nn.Conv2d(128, 128, kernel_size=3, padding=1),
-            nn.ReLU(True),
-            nn.MaxPool2d(kernel_size=2, stride=2),
-            nn.Conv2d(128, 256, kernel_size=3, padding=1),
-            nn.ReLU(True),
-            nn.Conv2d(256, 256, kernel_size=3, padding=1),
-            nn.ReLU(True),
-            nn.MaxPool2d(kernel_size=2, stride=2),
-            nn.Conv2d(256, 512, kernel_size=3, padding=1),
-            nn.ReLU(True),
-            nn.Conv2d(512, 512, kernel_size=3, padding=1),
-            nn.ReLU(True),
-            nn.Conv2d(512, 512, kernel_size=3, padding=1),
-            nn.ReLU(True),
-            nn.MaxPool2d(kernel_size=2, stride=2),
-            nn.Conv2d(512, 512, kernel_size=3, padding=1),
-            nn.ReLU(True),
-            nn.Conv2d(512, 512, kernel_size=3, padding=1),
-            nn.ReLU(True),
-            nn.Conv2d(512, 512, kernel_size=3, padding=1),
-            nn.ReLU(True),
-            nn.MaxPool2d(kernel_size=2, stride=2),
-        )
-
-        self.classifier = nn.Sequential(
-            nn.Linear(7 * 7 * 512, 4096),
-            nn.ReLU(True),
-            nn.Dropout(),
-            nn.Linear(4096, 4096),
-            nn.ReLU(True),
-            nn.Dropout(),
-            nn.Linear(4096, 5),
-            nn.LogSoftmax(dim=1),
-        )
-
-    def forward(self, imgs):
-        # image
-        features = self.features(imgs)
-        features = features.view(features.shape[0], -1)
-        #print(features.shape)
-        output = self.classifier(features)
-
-        return output
-'''
 # ------------------------------------train------------------------------------
 def train(net, train_loader, criterion, optimizer, epoch, device, log):
     # start train
@@ -179,7 +116,7 @@ def train(net, train_loader, criterion, optimizer, epoch, device, log):
     log.write("For Epoch: %2d, Average Loss: %.3f" % (epoch + 1, avg_loss) + "\n")
 
 # ------------------------------------val------------------------------------
-def val(net, val_loader, criterion, optimizer, epoch, device, log, val_len, train_start):
+def val(net, val_loader, criterion, optimizer, epoch, device, log, train_start):
     # val after each epoch
     net.eval()
 
@@ -225,7 +162,7 @@ def main():
     print("Use " + str(device))
 
     # create dataset
-    original_csv_data = pd.read_csv(train_csv)
+    original_csv_data = pd.read_csv(train_csv_path)
     print("length of original dataset is", len(original_csv_data))
     log.write("length of original dataset is " + str(len(original_csv_data)) + "\n")
 
@@ -239,16 +176,6 @@ def main():
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ])
 
-    original_dataset = Leaf_train_Dataset(original_csv_data, preprocessed_image, transform = data_transform)
-
-    # if need, use smaller dataset for fast debug
-    if sampler_len != -1:
-        original_dataset, drop_dataset = torch.utils.data.random_split(original_dataset, [sampler_len, len(
-            original_dataset) - sampler_len])
-
-    print("length of selected dataset is", len(original_dataset))
-    print()
-    log.write("length of selected dataset is " + str(len(original_dataset)) + "\n\n")
 
     if do_preprocessing == True:
         if not os.path.exists(preprocessed_image):
@@ -263,13 +190,15 @@ def main():
             preprocess(img_name, train_image, preprocessed_image)
             count += 1
 
-    # split dataset, get train and val
-    train_len = int((1 - proportion_of_val_dataset) * len(original_dataset))
-    val_len = len(original_dataset) - train_len
-
-    train_dataset, val_dataset = torch.utils.data.random_split(original_dataset, [train_len, val_len])
-
     print("Start random split:")
+
+    # split dataset, get train and val
+    train_len = int((1 - proportion_of_val_dataset) * len(original_csv_data))
+    train_csv = original_csv_data.iloc[:train_len]
+    val_csv = original_csv_data.iloc[train_len:]
+    train_dataset = Leaf_train_Dataset(train_csv, preprocessed_image, transform=data_transform)
+    val_dataset = Leaf_train_Dataset(val_csv, preprocessed_image, transform=data_transform)
+
     print("length of train dataset is", len(train_dataset))
     log.write("length of train dataset is " + str(len(train_dataset)) + "\n")
     print("length of val dataset is", len(val_dataset))
@@ -316,7 +245,7 @@ def main():
         train(net, train_loader, criterion, optimizer, epoch, device, log)
 
         # start val
-        val(net, val_loader, criterion, optimizer, epoch, device, log, val_len, train_start)
+        val(net, val_loader, criterion, optimizer, epoch, device, log, train_start)
 
     print("Final saved model is epoch "+str(best_val_acc[0])+", acc: "+str(best_val_acc[1])+".")
     log.write("Final saved model is epoch "+str(best_val_acc[0])+", acc: "+str(best_val_acc[1])+"\n")
