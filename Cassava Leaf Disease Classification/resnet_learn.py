@@ -195,6 +195,7 @@ def main():
     train_len = int((1 - proportion_of_val_dataset) * len(original_csv_data))
     train_csv = original_csv_data.iloc[:train_len]
     val_csv = original_csv_data.iloc[train_len:]
+    val_csv = val_csv.reset_index(drop=True)
     train_dataset = Leaf_train_Dataset(train_csv, preprocessed_image, transform=data_transform)
     val_dataset = Leaf_train_Dataset(val_csv, preprocessed_image, transform=data_transform)
 
