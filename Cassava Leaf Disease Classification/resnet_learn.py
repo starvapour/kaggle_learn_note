@@ -13,6 +13,7 @@ from PIL import Image
 #import pydicom
 import time
 from LabelSmoothingLoss import LabelSmoothingLoss
+from album_transform import get_train_transforms,get_test_transforms
 
 
 
@@ -25,13 +26,13 @@ preprocessed_image = "train_preprocessed_images/"
 do_preprocessing = False
 
 # continue train from old model
-from_old_model = False
+from_old_model = True
 
 # Train config
 # learning rate
-learning_rate = 0.0001
+learning_rate = 1e-6
 # max epoch
-epochs = 10
+epochs = 100
 # batch size
 batchSize = 16
 '''
@@ -40,13 +41,13 @@ model_save_step = 10
 '''
 
 # Use how many data of the dataset for val
-proportion_of_val_dataset = 0.1
+proportion_of_val_dataset = 0.3
 
 # output path
 log_name = "log.txt"
 
 # record best val acc with (epoch_num, acc)
-best_val_acc = (-1, 0)
+best_val_acc = (-1, 0.82)
 
 # ------------------------------------preprocess------------------------------------
 def preprocess(img_name, ori_path, target_path):
@@ -69,8 +70,12 @@ class Leaf_train_Dataset(Dataset):
     def __getitem__(self, index):
         image_id = self.csv.loc[index, 'image_id']
         label = self.csv.loc[index, 'label']
-        img = Image.open(self.img_path + image_id)
-        img = self.transform(img)
+        img = cv2.imread(self.img_path + image_id)
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        # img = Image.open(self.img_path + image_id)
+        # img = np.array(img)
+        img = self.transform(image=img)['image']
+        # img = self.transform(img)
         return img, label
 
     def __len__(self):
@@ -167,15 +172,21 @@ def main():
     log.write("length of original dataset is " + str(len(original_csv_data)) + "\n")
 
     # preprocessing steps
-    data_transform = transforms.Compose([
-        #transforms.Resize(256),
-        transforms.RandomCrop(224),
-        transforms.RandomHorizontalFlip(),
-        transforms.RandomVerticalFlip(),
-        transforms.ToTensor(),
-        #transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-    ])
+    # train_transform = transforms.Compose([
+    #     # transforms.Resize(256),
+    #     transforms.RandomCrop(224),
+    #     transforms.RandomHorizontalFlip(),
+    #     transforms.RandomVerticalFlip(),
+    #     transforms.ToTensor(),
+    #     # transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+    #     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    # ])
+    #
+    # test_transform = transforms.Compose([
+    #     transforms.Resize(224),
+    #     transforms.ToTensor(),
+    #     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    # ])
 
     if do_preprocessing == True:
         if not os.path.exists(preprocessed_image):
@@ -197,8 +208,8 @@ def main():
     train_csv = original_csv_data.iloc[:train_len]
     val_csv = original_csv_data.iloc[train_len:]
     val_csv = val_csv.reset_index(drop=True)
-    train_dataset = Leaf_train_Dataset(train_csv, preprocessed_image, transform=data_transform)
-    val_dataset = Leaf_train_Dataset(val_csv, preprocessed_image, transform=data_transform)
+    train_dataset = Leaf_train_Dataset(train_csv, preprocessed_image, transform=get_train_transforms())
+    val_dataset = Leaf_train_Dataset(val_csv, preprocessed_image, transform=get_test_transforms())
 
     print("length of train dataset is", len(train_dataset))
     log.write("length of train dataset is " + str(len(train_dataset)) + "\n")
@@ -228,8 +239,8 @@ def main():
     # criterion = nn.BCEWithLogitsLoss()
     # criterion = nn.NLLLoss()
     # 结合了nn.LogSoftmax()和nn.NLLLoss()两个函数
-    #criterion = nn.CrossEntropyLoss()
-    criterion = LabelSmoothingLoss(classes=10, smoothing= 0.1)
+    criterion = nn.CrossEntropyLoss()
+    #criterion = LabelSmoothingLoss(classes=10, smoothing= 0.1)
 
     # create optimizer
     optimizer = toptim.SGD(net.parameters(), lr=learning_rate)
