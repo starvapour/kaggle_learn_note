@@ -24,10 +24,10 @@ model_name = "efficientnet-b5"
 # model_name = "resnet50"
 
 # continue train from old model, if not, load pretrain data
-from_old_model = False
+from_old_model = True
 
 # learning rate
-learning_rate = 1e-4
+learning_rate = 1e-6
 # max epoch
 epochs = 100
 # batch size
@@ -42,8 +42,8 @@ criterion = nn.CrossEntropyLoss()
 # criterion = LabelSmoothingLoss(classes=10, smoothing=0.1)
 
 # create optimizer
-optimizer_name = "SGD"
-#optimizer_name = "Adam"
+#optimizer_name = "SGD"
+optimizer_name = "Adam"
 
 # Use how many data of the dataset for val
 proportion_of_val_dataset = 0.3
@@ -69,7 +69,7 @@ class Leaf_train_Dataset(Dataset):
             image_id = data_csv.loc[index, 'image_id']
             label = data_csv.loc[index, 'label']
             img = cv2.imread(img_path + image_id)
-            img = cv2.resize(img, (256, 256))
+            #img = cv2.resize(img, (256, 256))
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             self.data.append((img, label))
 
