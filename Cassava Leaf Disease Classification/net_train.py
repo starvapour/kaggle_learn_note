@@ -24,7 +24,7 @@ model_name = "efficientnet-b5"
 # model_name = "resnet50"
 
 # continue train from old model, if not, load pretrain data
-from_old_model = True
+from_old_model = False
 
 # learning rate
 learning_rate = 1e-6
@@ -42,17 +42,20 @@ criterion = nn.CrossEntropyLoss()
 # criterion = LabelSmoothingLoss(classes=10, smoothing=0.1)
 
 # create optimizer
-#optimizer_name = "SGD"
-optimizer_name = "Adam"
+optimizer_name = "SGD"
+#optimizer_name = "Adam"
 
 # Use how many data of the dataset for val
 proportion_of_val_dataset = 0.3
 
+# model output
+output_channel = 10
 
 # ------------------------------------other set------------------------------------
 train_csv_path = "train.csv"
 train_image = "train_images/"
 log_name = "log.txt"
+model_path = "save_model.pth"
 
 # record best val acc with (epoch_num, last_best_acc)
 best_val_acc = (-1, lowest_save_acc)
@@ -145,7 +148,7 @@ def val(net, val_loader, criterion, optimizer, epoch, device, log, train_start):
         if accuracy > best_val_acc[1]:
             # save model
             best_val_acc = (epoch+1, accuracy)
-            torch.save(net.state_dict(), "save_model.pth")
+            torch.save(net.state_dict(), model_path)
             print("Model saved in epoch "+str(epoch+1)+", acc: "+str(accuracy)+".")
             log.write("Model saved in epoch "+str(epoch+1)+", acc: "+str(accuracy)+".\n")
 
@@ -195,7 +198,7 @@ def main():
     val_loader = DataLoader(dataset=val_dataset, batch_size=batchSize, shuffle=True)
 
     # net model
-    net = get_model(model_name, from_old_model, device)
+    net = get_model(model_name, from_old_model, device, model_path, output_channel)
 
     # create optimizer
     if optimizer_name == "SGD":
