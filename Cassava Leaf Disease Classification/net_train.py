@@ -20,8 +20,8 @@ from model import get_model
 
 # ------------------------------------config------------------------------------
 # use which model
-#model_name = "efficientnet-b5"
-model_name = "resnet50"
+model_name = "efficientnet-b5"
+#model_name = "resnet50"
 
 # continue train from old model, if not, load pretrain data
 from_old_model = False
@@ -51,6 +51,10 @@ proportion_of_val_dataset = 0.3
 # model output
 output_channel = 10
 
+# read data from where
+read_data_from = "Memory"
+#read_data_from = "Disk"
+
 # ------------------------------------other set------------------------------------
 train_csv_path = "train.csv"
 train_image = "train_images/"
@@ -61,24 +65,49 @@ model_path = "save_model.pth"
 best_val_acc = (-1, lowest_save_acc)
 
 # ------------------------------------dataset------------------------------------
-# create dataset
-class Leaf_train_Dataset(Dataset):
-    def __init__(self, data_csv, img_path, transform):
-        # get lists
-        self.csv = data_csv
-        self.img_path = img_path
-        self.transform = transform
+if read_data_from == "Memory":
+    # create dataset
+    class Leaf_train_Dataset(Dataset):
+        def __init__(self, data_csv, img_path, transform):
+            # get lists
+            self.transform = transform
+            self.data = []
 
-    def __getitem__(self, index):
-        image_id = self.csv.loc[index, 'image_id']
-        label = self.csv.loc[index, 'label']
-        img = cv2.imread(self.img_path + image_id)
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        img = self.transform(image=img)['image']
-        return img, label
+            for index in range(len(data_csv)):
+                image_id = data_csv.loc[index, 'image_id']
+                label = data_csv.loc[index, 'label']
+                img = cv2.imread(img_path + image_id)
+                #img = cv2.resize(img, (256, 256))
+                img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                self.data.append((img, label))
 
-    def __len__(self):
-        return len(self.csv)
+        def __getitem__(self, index):
+            img, label = self.data[index]
+            img = self.transform(image=img)['image']
+            return img, label
+
+        def __len__(self):
+            return len(self.data)
+
+elif read_data_from == "Disk":
+    # create dataset
+    class Leaf_train_Dataset(Dataset):
+        def __init__(self, data_csv, img_path, transform):
+            # get lists
+            self.csv = data_csv
+            self.img_path = img_path
+            self.transform = transform
+
+        def __getitem__(self, index):
+            image_id = self.csv.loc[index, 'image_id']
+            label = self.csv.loc[index, 'label']
+            img = cv2.imread(self.img_path + image_id)
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            img = self.transform(image=img)['image']
+            return img, label
+
+        def __len__(self):
+            return len(self.csv)
 
 # ------------------------------------train------------------------------------
 def train(net, train_loader, criterion, optimizer, epoch, device, log):
