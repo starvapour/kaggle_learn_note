@@ -20,16 +20,16 @@ from model import get_model
 
 # ------------------------------------config------------------------------------
 # use which model
-model_name = "efficientnet-b5"
-# model_name = "resnet50"
+#model_name = "efficientnet-b5"
+model_name = "resnet50"
 
 # continue train from old model, if not, load pretrain data
-from_old_model = False
+from_old_model = True
 
 # learning rate
-learning_rate = 1e-6
+learning_rate = 3e-4
 # max epoch
-epochs = 100
+epochs = 20
 # batch size
 batchSize = 16
 
@@ -42,8 +42,8 @@ criterion = nn.CrossEntropyLoss()
 # criterion = LabelSmoothingLoss(classes=10, smoothing=0.1)
 
 # create optimizer
-optimizer_name = "SGD"
-#optimizer_name = "Adam"
+#optimizer_name = "SGD"
+optimizer_name = "Adam"
 
 # Use how many data of the dataset for val
 proportion_of_val_dataset = 0.3
@@ -65,24 +65,20 @@ best_val_acc = (-1, lowest_save_acc)
 class Leaf_train_Dataset(Dataset):
     def __init__(self, data_csv, img_path, transform):
         # get lists
+        self.csv = data_csv
+        self.img_path = img_path
         self.transform = transform
-        self.data = []
-
-        for index in range(len(data_csv)):
-            image_id = data_csv.loc[index, 'image_id']
-            label = data_csv.loc[index, 'label']
-            img = cv2.imread(img_path + image_id)
-            #img = cv2.resize(img, (256, 256))
-            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-            self.data.append((img, label))
 
     def __getitem__(self, index):
-        img, label = self.data[index]
+        image_id = self.csv.loc[index, 'image_id']
+        label = self.csv.loc[index, 'label']
+        img = cv2.imread(self.img_path + image_id)
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         img = self.transform(image=img)['image']
         return img, label
 
     def __len__(self):
-        return len(self.data)
+        return len(self.csv)
 
 # ------------------------------------train------------------------------------
 def train(net, train_loader, criterion, optimizer, epoch, device, log):
