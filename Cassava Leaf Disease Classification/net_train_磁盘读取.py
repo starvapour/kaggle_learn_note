@@ -24,7 +24,7 @@ from model import get_model
 model_name = "resnet50"
 
 # continue train from old model, if not, load pretrain data
-from_old_model = True
+from_old_model = False
 
 # learning rate
 learning_rate = 3e-4
