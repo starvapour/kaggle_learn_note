@@ -38,7 +38,7 @@ class config:
     # max epoch
     epochs = 10
     # batch size
-    batchSize = 32
+    batchSize = 8
 
     # if acc is more than this value, start save model
     lowest_save_acc = 0
