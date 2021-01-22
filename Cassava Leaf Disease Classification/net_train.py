@@ -1,17 +1,10 @@
 import cv2
-import torch
-import os
 import pandas as pd
-import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as toptim
 from torch.utils.data import Dataset, DataLoader
-from torchvision import transforms, models
-from PIL import Image
-#import pydicom
 import time
-from efficientnet_pytorch import EfficientNet
 from LabelSmoothingLoss import LabelSmoothingLoss
 from album_transform import get_train_transforms,get_test_transforms
 from model import get_model
@@ -20,59 +13,74 @@ from apex import amp
 
 
 # ------------------------------------config------------------------------------
-# use which model
-model_name = "efficientnet"
-# model_name = "resnet50"
+class config:
+    # all the seed
+    seed = 2021
 
-# continue train from old model, if not, load pretrain data
-from_old_model = False
+    # input image size
+    img_size = 512
 
-# whether use apex or not
-use_apex = True
+    # use which model
+    model_name = "efficientnet"
+    # model_name = "resnet50"
 
-# whether only train output layer
-only_train_output_layer = True
+    # continue train from old model, if not, load pretrain data
+    from_old_model = False
 
-# learning rate
-learning_rate = 3e-4
-# max epoch
-epochs = 20
-# batch size
-batchSize = 8
+    # whether use apex or not
+    use_apex = True
 
-# if acc is more than this value, start save model
-lowest_save_acc = 0
+    # whether only train output layer
+    only_train_output_layer = False
 
-# loss function
-# criterion = nn.BCEWithLogitsLoss()
-criterion = nn.CrossEntropyLoss()
-# criterion = LabelSmoothingLoss(classes=10, smoothing=0.1)
+    # learning rate
+    learning_rate = 3e-4
+    # max epoch
+    epochs = 10
+    # batch size
+    batchSize = 32
 
-# create optimizer
-#optimizer_name = "SGD"
-optimizer_name = "Adam"
+    # if acc is more than this value, start save model
+    lowest_save_acc = 0
 
-# Use how many data of the dataset for val
-proportion_of_val_dataset = 0.3
+    # loss function
+    # criterion = nn.BCEWithLogitsLoss()
+    criterion = nn.CrossEntropyLoss()
+    # criterion = LabelSmoothingLoss(classes=10, smoothing=0.1)
 
-# model output
-output_channel = 10
+    # create optimizer
+    #optimizer_name = "SGD"
+    optimizer_name = "Adam"
 
-# read data from where
-# read_data_from = "Memory"
-read_data_from = "Disk"
+    # Use how many data of the dataset for val
+    proportion_of_val_dataset = 0.3
 
-# ------------------------------------other set------------------------------------
-train_csv_path = "train.csv"
-train_image = "train_images/"
-log_name = "log.txt"
-model_path = "save_model.pth"
+    # model output
+    output_channel = 10
+
+    # read data from where
+    # read_data_from = "Memory"
+    read_data_from = "Disk"
+
+    # ------------------------------------path set------------------------------------
+    train_csv_path = "train.csv"
+    train_image = "train_images/"
+    log_name = "log.txt"
+    model_path = "save_model.pth"
 
 # record best val acc with (epoch_num, last_best_acc)
-best_val_acc = (-1, lowest_save_acc)
+best_val_acc = (-1, config.lowest_save_acc)
+
+def seed_torch(seed):
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+
+seed_torch(seed=config.seed)
 
 # ------------------------------------dataset------------------------------------
-if read_data_from == "Memory":
+if config.read_data_from == "Memory":
     # create dataset
     class Leaf_train_Dataset(Dataset):
         def __init__(self, data_csv, img_path, transform):
@@ -96,7 +104,7 @@ if read_data_from == "Memory":
         def __len__(self):
             return len(self.data)
 
-elif read_data_from == "Disk":
+elif config.read_data_from == "Disk":
     # create dataset
     class Leaf_train_Dataset(Dataset):
         def __init__(self, data_csv, img_path, transform):
@@ -141,7 +149,7 @@ def train(net, train_loader, criterion, optimizer, epoch, device, log):
         loss_count += 1
 
         # calculate gradients.
-        if use_apex:
+        if config.use_apex:
             with amp.scale_loss(loss, optimizer) as scaled_loss:
                 scaled_loss.backward()
         else:
@@ -152,7 +160,7 @@ def train(net, train_loader, criterion, optimizer, epoch, device, log):
 
         # print loss
         # print(index)
-        if (index + 1) % 200 == 0:
+        if (index + 1) % 100 == 0:
             print("Epoch: %2d, Batch: %4d / %4d, Loss: %.3f" % (epoch + 1, index + 1, batch_num, loss.item()))
 
     avg_loss = runningLoss / loss_count
@@ -184,7 +192,7 @@ def val(net, val_loader, criterion, optimizer, epoch, device, log, train_start):
         if accuracy > best_val_acc[1]:
             # save model
             best_val_acc = (epoch+1, accuracy)
-            torch.save(net.state_dict(), model_path)
+            torch.save(net.state_dict(), config.model_path)
             print("Model saved in epoch "+str(epoch+1)+", acc: "+str(accuracy)+".")
             log.write("Model saved in epoch "+str(epoch+1)+", acc: "+str(accuracy)+".\n")
 
@@ -206,23 +214,23 @@ def main():
     print("Use " + str(device))
 
     # create dataset
-    original_csv_data = pd.read_csv(train_csv_path)
+    original_csv_data = pd.read_csv(config.train_csv_path)
     print("length of original dataset is", len(original_csv_data))
     log.write("length of original dataset is " + str(len(original_csv_data)) + "\n")
 
     # split dataset, get train and val
-    train_len = int((1 - proportion_of_val_dataset) * len(original_csv_data))
+    train_len = int((1 - config.proportion_of_val_dataset) * len(original_csv_data))
     train_csv = original_csv_data.iloc[:train_len]
     val_csv = original_csv_data.iloc[train_len:]
     val_csv = val_csv.reset_index(drop=True)
 
     print("Start load train dataset:")
-    train_dataset = Leaf_train_Dataset(train_csv, train_image, transform=get_train_transforms())
+    train_dataset = Leaf_train_Dataset(train_csv, config.train_image, transform=get_train_transforms(config.img_size))
     print("length of train dataset is", len(train_dataset))
     log.write("length of train dataset is " + str(len(train_dataset)) + "\n")
 
     print("Start load val dataset:")
-    val_dataset = Leaf_train_Dataset(val_csv, train_image, transform=get_test_transforms())
+    val_dataset = Leaf_train_Dataset(val_csv, config.train_image, transform=get_test_transforms(config.img_size))
     print("length of val dataset is", len(val_dataset))
     log.write("length of val dataset is " + str(len(val_dataset)) + "\n\n")
 
@@ -230,14 +238,14 @@ def main():
     print("Start training:")
 
     # create dataloader
-    train_loader = DataLoader(dataset=train_dataset, batch_size=batchSize, shuffle=True)
-    val_loader = DataLoader(dataset=val_dataset, batch_size=batchSize, shuffle=True)
+    train_loader = DataLoader(dataset=train_dataset, batch_size=config.batchSize, shuffle=True)
+    val_loader = DataLoader(dataset=val_dataset, batch_size=config.batchSize, shuffle=True)
 
     # net model
-    net = get_model(model_name, from_old_model, device, model_path, output_channel)
+    net = get_model(config.model_name, config.from_old_model, device, config.model_path, config.output_channel)
 
     # if only train output layer
-    if only_train_output_layer:
+    if config.only_train_output_layer:
         for name, value in net.named_parameters():
             if name != "_fc.weight" and name != "_fc.bias" and name != "fc.weight" and name != "fc.bias":
                 value.requires_grad = False
@@ -247,28 +255,28 @@ def main():
         params = net.parameters()
 
         # create optimizer
-    if optimizer_name == "SGD":
-        optimizer = toptim.SGD(params, lr=learning_rate)
-    elif optimizer_name == "Adam":
-        optimizer = toptim.Adam(params, lr=learning_rate)
+    if config.optimizer_name == "SGD":
+        optimizer = toptim.SGD(params, lr=config.learning_rate)
+    elif config.optimizer_name == "Adam":
+        optimizer = toptim.Adam(params, lr=config.learning_rate)
 
     # 混合精度加速
-    if use_apex:
+    if config.use_apex:
         net, optimizer = amp.initialize(net, optimizer, opt_level="O1")
 
     train_start = time.time()
 
-    for epoch in range(epochs):
+    for epoch in range(config.epochs):
         '''
         # change lr by epoch
         adjust_learning_rate(optimizer, epoch)
         '''
 
         # start train
-        train(net, train_loader, criterion, optimizer, epoch, device, log)
+        train(net, train_loader, config.criterion, optimizer, epoch, device, log)
 
         # start val
-        val(net, val_loader, criterion, optimizer, epoch, device, log, train_start)
+        val(net, val_loader, config.criterion, optimizer, epoch, device, log, train_start)
 
     print("Final saved model is epoch "+str(best_val_acc[0])+", acc: "+str(best_val_acc[1])+".")
     log.write("Final saved model is epoch "+str(best_val_acc[0])+", acc: "+str(best_val_acc[1])+"\n")
@@ -278,7 +286,7 @@ def main():
 
 
 if __name__ == '__main__':
-    with open(log_name, 'w') as log:
+    with open(config.log_name, 'w') as log:
         main()
 
 

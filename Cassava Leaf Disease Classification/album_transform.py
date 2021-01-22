@@ -5,11 +5,9 @@ from albumentations import (Blur,Flip,ShiftScaleRotate,GridDistortion,ElasticTra
 from albumentations.pytorch import ToTensorV2
 import cv2
 
-input_length = 512
-
-def get_train_transforms():
+def get_train_transforms(img_size):
     return Compose(
-        [RandomResizedCrop(input_length, input_length),
+        [RandomResizedCrop(img_size, img_size),
          #RandomCrop(224, 224),
          OneOf([
              RandomGamma(gamma_limit=(60, 120), p=0.9),
@@ -32,9 +30,9 @@ def get_train_transforms():
     )
 
 
-def get_test_transforms():
+def get_test_transforms(img_size):
     return Compose(
-        [Resize(input_length, input_length),
+        [Resize(img_size, img_size),
          Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225), max_pixel_value=255.0, p=1.0),
          ToTensorV2(p=1.0),]
     )
