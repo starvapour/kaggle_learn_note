@@ -15,23 +15,30 @@ from efficientnet_pytorch import EfficientNet
 from LabelSmoothingLoss import LabelSmoothingLoss
 from album_transform import get_train_transforms,get_test_transforms
 from model import get_model
+from apex import amp
 
 
 
 # ------------------------------------config------------------------------------
 # use which model
-model_name = "efficientnet-b5"
-#model_name = "resnet50"
+model_name = "efficientnet"
+# model_name = "resnet50"
 
 # continue train from old model, if not, load pretrain data
 from_old_model = False
+
+# whether use apex or not
+use_apex = True
+
+# whether only train output layer
+only_train_output_layer = True
 
 # learning rate
 learning_rate = 3e-4
 # max epoch
 epochs = 20
 # batch size
-batchSize = 16
+batchSize = 8
 
 # if acc is more than this value, start save model
 lowest_save_acc = 0
@@ -52,8 +59,8 @@ proportion_of_val_dataset = 0.3
 output_channel = 10
 
 # read data from where
-read_data_from = "Memory"
-#read_data_from = "Disk"
+# read_data_from = "Memory"
+read_data_from = "Disk"
 
 # ------------------------------------other set------------------------------------
 train_csv_path = "train.csv"
@@ -134,14 +141,18 @@ def train(net, train_loader, criterion, optimizer, epoch, device, log):
         loss_count += 1
 
         # calculate gradients.
-        loss.backward()
+        if use_apex:
+            with amp.scale_loss(loss, optimizer) as scaled_loss:
+                scaled_loss.backward()
+        else:
+            loss.backward()
 
         # reduce loss
         optimizer.step()
 
         # print loss
         # print(index)
-        if (index + 1) % 100 == 0:
+        if (index + 1) % 200 == 0:
             print("Epoch: %2d, Batch: %4d / %4d, Loss: %.3f" % (epoch + 1, index + 1, batch_num, loss.item()))
 
     avg_loss = runningLoss / loss_count
@@ -225,11 +236,25 @@ def main():
     # net model
     net = get_model(model_name, from_old_model, device, model_path, output_channel)
 
-    # create optimizer
+    # if only train output layer
+    if only_train_output_layer:
+        for name, value in net.named_parameters():
+            if name != "_fc.weight" and name != "_fc.bias" and name != "fc.weight" and name != "fc.bias":
+                value.requires_grad = False
+        # setup optimizer
+        params = filter(lambda x: x.requires_grad, net.parameters())
+    else:
+        params = net.parameters()
+
+        # create optimizer
     if optimizer_name == "SGD":
-        optimizer = toptim.SGD(net.parameters(), lr=learning_rate)
+        optimizer = toptim.SGD(params, lr=learning_rate)
     elif optimizer_name == "Adam":
-        optimizer = toptim.Adam(net.parameters(), lr=learning_rate)
+        optimizer = toptim.Adam(params, lr=learning_rate)
+
+    # 混合精度加速
+    if use_apex:
+        net, optimizer = amp.initialize(net, optimizer, opt_level="O1")
 
     train_start = time.time()
 

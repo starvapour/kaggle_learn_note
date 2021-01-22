@@ -5,7 +5,7 @@ from albumentations import (Blur,Flip,ShiftScaleRotate,GridDistortion,ElasticTra
 from albumentations.pytorch import ToTensorV2
 import cv2
 
-input_length = 224
+input_length = 512
 
 def get_train_transforms():
     return Compose(
