@@ -16,19 +16,21 @@ from apex import amp
 class config:
     # all the seed
     seed = 2021
+    use_seed = False
 
     # input image size
-    img_size = 512
+    img_size = 224
 
     # use which model
-    model_name = "efficientnet"
+    # model_name = "efficientnet"
     # model_name = "resnet50"
+    model_name = "resnext50_32x4d"
 
     # continue train from old model, if not, load pretrain data
     from_old_model = False
 
     # whether use apex or not
-    use_apex = True
+    use_apex = False
 
     # whether only train output layer
     only_train_output_layer = False
@@ -36,9 +38,9 @@ class config:
     # learning rate
     learning_rate = 3e-4
     # max epoch
-    epochs = 10
+    epochs = 100
     # batch size
-    batchSize = 8
+    batchSize = 16
 
     # if acc is more than this value, start save model
     lowest_save_acc = 0
@@ -49,24 +51,27 @@ class config:
     # criterion = LabelSmoothingLoss(classes=10, smoothing=0.1)
 
     # create optimizer
-    #optimizer_name = "SGD"
+    # optimizer_name = "SGD"
     optimizer_name = "Adam"
 
-    # Use how many data of the dataset for val
-    proportion_of_val_dataset = 0.3
+    # Use how many data of the dataset for val, do not used now
+    # proportion_of_val_dataset = 0.2
+
+    # the index of each 0.2 part, which part used for val, form 0 to 4
+    val_index = 0
 
     # model output
     output_channel = 10
 
     # read data from where
-    # read_data_from = "Memory"
-    read_data_from = "Disk"
+    read_data_from = "Memory"
+    # read_data_from = "Disk"
 
     # ------------------------------------path set------------------------------------
     train_csv_path = "train.csv"
     train_image = "train_images/"
     log_name = "log.txt"
-    model_path = "save_model.pth"
+    model_path = "trained_models/save_model_" + model_name + "_" + str(val_index) + ".pth"
 
 # record best val acc with (epoch_num, last_best_acc)
 best_val_acc = (-1, config.lowest_save_acc)
@@ -77,7 +82,9 @@ def seed_torch(seed):
     torch.cuda.manual_seed_all(seed)
     torch.backends.cudnn.deterministic = True
 
-seed_torch(seed=config.seed)
+
+if config.use_seed:
+    seed_torch(seed=config.seed)
 
 # ------------------------------------dataset------------------------------------
 if config.read_data_from == "Memory":
@@ -160,7 +167,7 @@ def train(net, train_loader, criterion, optimizer, epoch, device, log):
 
         # print loss
         # print(index)
-        if (index + 1) % 100 == 0:
+        if (index + 1) % 200 == 0:
             print("Epoch: %2d, Batch: %4d / %4d, Loss: %.3f" % (epoch + 1, index + 1, batch_num, loss.item()))
 
     avg_loss = runningLoss / loss_count
@@ -219,10 +226,19 @@ def main():
     log.write("length of original dataset is " + str(len(original_csv_data)) + "\n")
 
     # split dataset, get train and val
-    train_len = int((1 - config.proportion_of_val_dataset) * len(original_csv_data))
-    train_csv = original_csv_data.iloc[:train_len]
-    val_csv = original_csv_data.iloc[train_len:]
+    part_len = int(len(original_csv_data) * 0.2)
+    #train_len = int((1 - config.proportion_of_val_dataset) * len(original_csv_data))
+    if config.val_index != 4:
+        # print("train_range is:",0,config.val_index * part_len-1, "and",(config.val_index+1) * part_len, -1)
+        train_csv = pd.concat([original_csv_data.iloc[:config.val_index * part_len], original_csv_data.iloc[(config.val_index+1) * part_len:]],axis=0,join='inner')
+    else:
+        # print("train_range is:",0, config.val_index * part_len-1)
+        train_csv = original_csv_data.iloc[:config.val_index * part_len]
+    train_csv = train_csv.reset_index(drop=True)
+    # print("val_range is:", config.val_index * part_len,(config.val_index+1) * part_len-1)
+    val_csv = original_csv_data.iloc[config.val_index * part_len:(config.val_index+1) * part_len]
     val_csv = val_csv.reset_index(drop=True)
+    #print(train_csv)
 
     print("Start load train dataset:")
     train_dataset = Leaf_train_Dataset(train_csv, config.train_image, transform=get_train_transforms(config.img_size))
