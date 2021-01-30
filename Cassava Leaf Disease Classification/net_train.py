@@ -23,8 +23,8 @@ class config:
 
     # use which model
     # model_name = "efficientnet"
-    # model_name = "resnet50"
-    model_name = "resnext50_32x4d"
+    model_name = "resnet50"
+    # model_name = "resnext50_32x4d"
 
     # continue train from old model, if not, load pretrain data
     from_old_model = False
@@ -35,10 +35,13 @@ class config:
     # whether only train output layer
     only_train_output_layer = False
 
+    # if true, do more pre-processing to change the image
+    use_image_enhancement = True
+
     # learning rate
-    learning_rate = 3e-4
+    learning_rate = 1e-6
     # max epoch
-    epochs = 100
+    epochs = 200
     # batch size
     batchSize = 16
 
@@ -241,7 +244,10 @@ def main():
     #print(train_csv)
 
     print("Start load train dataset:")
-    train_dataset = Leaf_train_Dataset(train_csv, config.train_image, transform=get_train_transforms(config.img_size))
+    if config.use_image_enhancement:
+        train_dataset = Leaf_train_Dataset(train_csv, config.train_image, transform=get_train_transforms(config.img_size))
+    else:
+        train_dataset = Leaf_train_Dataset(train_csv, config.train_image, transform=get_test_transforms(config.img_size))
     print("length of train dataset is", len(train_dataset))
     log.write("length of train dataset is " + str(len(train_dataset)) + "\n")
 
