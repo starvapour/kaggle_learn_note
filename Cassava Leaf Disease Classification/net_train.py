@@ -19,18 +19,18 @@ class config:
     use_seed = False
 
     # input image size
-    img_size = 224
+    img_size = 512
 
     # use which model
-    # model_name = "efficientnet"
-    model_name = "resnet50"
+    model_name = "efficientnet"
+    # model_name = "resnet50"
     # model_name = "resnext50_32x4d"
 
     # continue train from old model, if not, load pretrain data
-    from_old_model = False
+    from_old_model = True
 
     # whether use apex or not
-    use_apex = False
+    use_apex = True
 
     # whether only train output layer
     only_train_output_layer = False
@@ -41,12 +41,12 @@ class config:
     # learning rate
     learning_rate = 1e-6
     # max epoch
-    epochs = 200
+    epochs = 150
     # batch size
-    batchSize = 16
+    batchSize = 8
 
     # if acc is more than this value, start save model
-    lowest_save_acc = 0
+    lowest_save_acc = 0.88455
 
     # loss function
     # criterion = nn.BCEWithLogitsLoss()
@@ -54,8 +54,8 @@ class config:
     # criterion = LabelSmoothingLoss(classes=10, smoothing=0.1)
 
     # create optimizer
-    # optimizer_name = "SGD"
-    optimizer_name = "Adam"
+    optimizer_name = "SGD"
+    # optimizer_name = "Adam"
 
     # Use how many data of the dataset for val, do not used now
     # proportion_of_val_dataset = 0.2
@@ -67,11 +67,12 @@ class config:
     output_channel = 10
 
     # read data from where
-    read_data_from = "Memory"
-    # read_data_from = "Disk"
+    # read_data_from = "Memory"
+    read_data_from = "Disk"
 
     # ------------------------------------path set------------------------------------
-    train_csv_path = "train.csv"
+    #train_csv_path = "train.csv"
+    train_csv_path = "train_clean.csv"
     train_image = "train_images/"
     log_name = "log.txt"
     model_path = "trained_models/save_model_" + model_name + "_" + str(val_index) + ".pth"

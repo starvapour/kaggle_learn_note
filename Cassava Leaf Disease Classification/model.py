@@ -1,6 +1,8 @@
 from efficientnet_pytorch import EfficientNet
 from torchvision import models
 import torch
+import torch.nn as nn
+import timm
 
 # get model
 def get_model(model_name, from_old_model, device, model_path, output_channel):
@@ -28,6 +30,22 @@ def get_model(model_name, from_old_model, device, model_path, output_channel):
             net = net.to(device)
 
     elif model_name == "resnext50_32x4d":
-        pass
+        class CustomResNext(nn.Module):
+            def __init__(self, model_name='resnext50_32x4d', pretrained=False):
+                super().__init__()
+                self.model = timm.create_model(model_name, pretrained=pretrained)
+                n_features = self.model.fc.in_features
+                self.model.fc = nn.Linear(n_features, output_channel)
 
+            def forward(self, x):
+                x = self.model(x)
+                return x
+
+        if from_old_model:
+            net = CustomResNext()
+            net.load_state_dict(torch.load(model_path))
+            net = net.to(device)
+        else:
+            net = CustomResNext()
+            net = net.to(device)
     return net

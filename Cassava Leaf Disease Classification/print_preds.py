@@ -12,18 +12,11 @@ from efficientnet_pytorch import EfficientNet
 import numpy as np
 
 
-
 # ------------------------------------config------------------------------------
-on_kaggle = True
-
-if on_kaggle:
-    test_path = "../input/cassava-leaf-disease-classification/test_images/"
-    model_dict = "../input/leaf-disease-model/"
-    output_path = "./"
-else:
-    test_path = "test_images/"
-    model_dict = "trained_models/"
-    output_path = ""
+train_csv_path = "train.csv"
+img_path = "train_images/"
+model_dict = "trained_models/"
+output_path = ""
 
 eff_model_paths = [model_dict + "save_model_efficientnet_0.pth",
                    model_dict + "save_model_efficientnet_1.pth",
@@ -33,25 +26,27 @@ eff_model_paths = [model_dict + "save_model_efficientnet_0.pth",
 
 # Test config
 # batch size
-batchSize = 16
+batchSize = 8
 
 # ------------------------------------dataset------------------------------------
 # create dataset
-class Leaf_test_Dataset(Dataset):
-    def __init__(self, file_list, test_path, transform):
+class Leaf_train_Dataset(Dataset):
+    def __init__(self, data_csv, img_path, transform):
         # get lists
-        self.file_list = file_list
-        self.test_path = test_path
+        self.csv = data_csv
+        self.img_path = img_path
         self.transform = transform
 
     def __getitem__(self, index):
-        image_path = self.test_path + self.file_list[index]
+        image_id = self.csv.loc[index, 'image_id']
+        label = self.csv.loc[index, 'label']
+        image_path = self.img_path + image_id
         img = Image.open(image_path)
         img = self.transform(img)
-        return img
+        return img, image_id, label
 
     def __len__(self):
-        return len(self.file_list)
+        return len(self.csv)
 
 # ------------------------------------main------------------------------------
 # main
@@ -61,18 +56,17 @@ def main():
     print("Use " + str(device))
 
     # create dataset
-    file_list = None
-    for path, dirs, files in os.walk(test_path, topdown=False):
-        file_list = list(files)
 
     # preprocessing steps
     transform = transforms.Compose([
-        transforms.Resize((512,512)),
+        transforms.Resize((512, 512)),
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ])
-    test_dataset = Leaf_test_Dataset(file_list, test_path, transform)
-    test_loader = DataLoader(dataset=test_dataset, batch_size=batchSize)
+
+    train_csv = pd.read_csv(train_csv_path)
+    train_dataset = Leaf_train_Dataset(train_csv, img_path, transform)
+    train_loader = DataLoader(dataset=train_dataset, batch_size=batchSize)
 
     print("Start testing:")
 
@@ -86,33 +80,31 @@ def main():
         eff_net.eval()
         eff_models.append(eff_net)
 
-    result = []
-
-    softmax = nn.Softmax(dim=1)
+    # create a dataframe from numpy, columns are ["image_id", "label", "pred_0", "pred_1", 'pred_2', "pred_3", "pred_4"]
+    preds = []
 
     with torch.no_grad():
-        batch_num = len(test_loader)
-        for index, image in enumerate(test_loader):
-            image = image.to(device)
-
-            eff_result = []
+        batch_num = len(train_loader)
+        for index, (imgs, image_ids, labels) in enumerate(train_loader):
+            imgs = imgs.to(device)
+            eff_result = [image_ids, labels]
             for eff_net in eff_models:
-                if len(eff_result) == 0:
-                    eff_result = np.array(softmax(eff_net(image).to('cpu')))
+                output = eff_net(imgs)
+                output = output.to('cpu')
+                pred = output.argmax(dim=1, keepdim=True).reshape(labels.shape)
+                eff_result.append(pred)
 
-                else:
-                    eff_result = eff_result + np.array(softmax(eff_net(image).to('cpu')))
-
-            output = torch.tensor(eff_result, dtype=torch.float32)
-            pred = output.argmax(dim=1, keepdim=True)
-            pred = pred.view(pred.shape[0], -1)
-            result = result + list(map(lambda x: int(x), pred))
+            if len(preds) == 0:
+                preds = np.dstack(eff_result)[0]
+            else:
+                preds = np.vstack([preds, np.dstack(eff_result)[0]])
 
             if (index + 1) % 10 == 0:
                 print("Batch: %4d / %4d" % (index + 1, batch_num))
 
-    pred_result = pd.concat([pd.DataFrame(file_list, columns=['image_id']), pd.DataFrame(result, columns=['label'])], axis=1)
-    pred_result.to_csv(output_path + "submission.csv", index=False, sep=',')
+    preds_csv = pd.DataFrame(preds, columns=["image_id", "label", "pred_0", "pred_1", 'pred_2', "pred_3", "pred_4"])
+    preds_csv.to_csv(output_path + "models_pred.csv", index=False, sep=',')
+    #print(preds)
 
     print("Done.")
 
