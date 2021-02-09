@@ -51,7 +51,7 @@ class config:
     # loss function
     # criterion = nn.BCEWithLogitsLoss()
     criterion = nn.CrossEntropyLoss()
-    # criterion = LabelSmoothingLoss(classes=10, smoothing=0.1)
+    # criterion = LabelSmoothingLoss(classes=5, smoothing=0.1)
 
     # create optimizer
     # optimizer_name = "SGD"
