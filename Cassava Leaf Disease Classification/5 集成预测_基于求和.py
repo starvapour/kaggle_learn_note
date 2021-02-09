@@ -80,7 +80,7 @@ def main():
     eff_models = []
     for model_path in eff_model_paths:
         eff_net = EfficientNet.from_name('efficientnet-b4')
-        eff_net._fc.out_features = 10
+        eff_net._fc.out_features = 5
         eff_net.load_state_dict(torch.load(model_path))
         eff_net = eff_net.to(device)
         eff_net.eval()
