@@ -27,21 +27,24 @@ class config:
     # model_name = "resnext50_32x4d"
 
     # continue train from old model, if not, load pretrain data
-    from_old_model = True
+    from_old_model = False
 
     # whether use apex or not
     use_apex = True
 
+    # if true, remove noise in noise.txt in train dataset
+    remove_noise = True
+
     # whether only train output layer
-    only_train_output_layer = True
+    only_train_output_layer = False
 
     # if true, do more pre-processing to change the image
     use_image_enhancement = True
 
     # learning rate
-    learning_rate = 1e-4
+    learning_rate = 1e-6
     # max epoch
-    epochs = 150
+    epochs = 100
     # batch size
     batchSize = 8
 
@@ -52,12 +55,13 @@ class config:
     # criterion = nn.BCEWithLogitsLoss()
     criterion = nn.CrossEntropyLoss()
     # criterion = LabelSmoothingLoss(classes=5, smoothing=0.1)
+    # criterion = nn.MultiMarginLoss()
 
     # create optimizer
     # optimizer_name = "SGD"
     optimizer_name = "Adam"
 
-    # Use how many data of the dataset for val, do not used now
+    # Use how many data of the dataset for val, not used now
     # proportion_of_val_dataset = 0.2
 
     # the index of each 0.2 part, which part used for val, form 0 to 4
@@ -71,8 +75,8 @@ class config:
     read_data_from = "Disk"
 
     # ------------------------------------path set------------------------------------
-    # train_csv_path = "train.csv"
-    train_csv_path = "train_clean.csv"
+    train_csv_path = "train.csv"
+    noise_path = "noise.txt"
 
     train_image = "train_images/"
     log_name = "log.txt"
@@ -232,18 +236,28 @@ def main():
 
     # split dataset, get train and val
     part_len = int(len(original_csv_data) * 0.2)
-    #train_len = int((1 - config.proportion_of_val_dataset) * len(original_csv_data))
     if config.val_index != 4:
-        # print("train_range is:",0,config.val_index * part_len-1, "and",(config.val_index+1) * part_len, -1)
         train_csv = pd.concat([original_csv_data.iloc[:config.val_index * part_len], original_csv_data.iloc[(config.val_index+1) * part_len:]],axis=0,join='inner')
     else:
-        # print("train_range is:",0, config.val_index * part_len-1)
         train_csv = original_csv_data.iloc[:config.val_index * part_len]
     train_csv = train_csv.reset_index(drop=True)
-    # print("val_range is:", config.val_index * part_len,(config.val_index+1) * part_len-1)
     val_csv = original_csv_data.iloc[config.val_index * part_len:(config.val_index+1) * part_len]
     val_csv = val_csv.reset_index(drop=True)
-    #print(train_csv)
+    print(len(train_csv))
+
+    # remove noise data in noise file
+    if config.remove_noise:
+        with open(config.noise_path) as noise_file:
+            noise = noise_file.readline().split(",")
+            # remove noise in training data
+            delete_index = []
+            for index in range(len(train_csv)):
+                if train_csv.loc[index, 'image_id'] in noise:
+                    delete_index.append(index)
+            print(noise)
+            print(delete_index)
+            train_csv = train_csv.drop(delete_index)
+            train_csv = train_csv.reset_index(drop=True)
 
     print("Start load train dataset:")
     if config.use_image_enhancement:

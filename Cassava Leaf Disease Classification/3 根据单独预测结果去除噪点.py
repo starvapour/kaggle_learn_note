@@ -3,6 +3,7 @@ import pandas as pd
 train_path = "train.csv"
 pred_path = "models_pred.csv"
 output_path = "train_clean.csv"
+noise_path = "noise.txt"
 
 pred_csv = pd.read_csv(pred_path)
 train_csv = pd.read_csv(train_path)
@@ -24,16 +25,18 @@ def get_acc(pred_csv, index):
     return round(acc,1)
 
 pred_acc_record = {0:0, 0.2:0, 0.4:0, 0.6:0, 0.8:0, 1:0}
-delete_index = []
+noise = []
 for index in range(len(pred_csv)):
     acc = get_acc(pred_csv, index)
     pred_acc_record[acc] += 1
     # remove noise data
     if acc <= 0.2:
-        delete_index.append(index)
+        noise.append(pred_csv.loc[index, 'image_id'])
 
-train_csv = train_csv.drop(delete_index)
-train_csv = train_csv.reset_index(drop=True)
+with open(noise_path, 'w') as noise_file:
+    noise_file.write(",".join(noise))
+
+
 print(pred_acc_record)
 print((pred_acc_record[0] + pred_acc_record[0.2])/len(pred_csv))
 
