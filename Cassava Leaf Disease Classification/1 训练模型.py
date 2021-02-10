@@ -243,7 +243,6 @@ def main():
     train_csv = train_csv.reset_index(drop=True)
     val_csv = original_csv_data.iloc[config.val_index * part_len:(config.val_index+1) * part_len]
     val_csv = val_csv.reset_index(drop=True)
-    print(len(train_csv))
 
     # remove noise data in noise file
     if config.remove_noise:
@@ -254,8 +253,6 @@ def main():
             for index in range(len(train_csv)):
                 if train_csv.loc[index, 'image_id'] in noise:
                     delete_index.append(index)
-            print(noise)
-            print(delete_index)
             train_csv = train_csv.drop(delete_index)
             train_csv = train_csv.reset_index(drop=True)
 
