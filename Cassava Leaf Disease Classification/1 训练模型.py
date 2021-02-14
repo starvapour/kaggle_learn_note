@@ -5,10 +5,12 @@ import torch.nn as nn
 import torch.optim as toptim
 from torch.utils.data import Dataset, DataLoader
 import time
-from LabelSmoothingLoss import LabelSmoothingLoss
+from Loss import LabelSmoothingLoss, FocalLoss
 from album_transform import get_train_transforms,get_test_transforms
 from model import get_model
 from apex import amp
+from torch.optim import AdamW
+import numpy as np
 
 
 
@@ -16,7 +18,7 @@ from apex import amp
 class config:
     # all the seed
     seed = 2021
-    use_seed = False
+    use_seed = True
 
     # input image size
     img_size = 512
@@ -25,6 +27,7 @@ class config:
     model_name = "efficientnet"
     # model_name = "resnet50"
     # model_name = "resnext50_32x4d"
+    # model_name = "custom"
 
     # continue train from old model, if not, load pretrain data
     from_old_model = False
@@ -36,13 +39,16 @@ class config:
     remove_noise = True
 
     # whether only train output layer
-    only_train_output_layer = False
+    only_train_output_layer = True
 
     # if true, do more pre-processing to change the image
     use_image_enhancement = True
 
+    # if true, use cutmix
+    use_cutmix = True
+
     # learning rate
-    learning_rate = 1e-6
+    learning_rate = 3e-4
     # max epoch
     epochs = 100
     # batch size
@@ -53,13 +59,16 @@ class config:
 
     # loss function
     # criterion = nn.BCEWithLogitsLoss()
-    criterion = nn.CrossEntropyLoss()
+    # criterion = nn.CrossEntropyLoss()
     # criterion = LabelSmoothingLoss(classes=5, smoothing=0.1)
-    # criterion = nn.MultiMarginLoss()
+    #criterion = FocalLoss()
+    # 多标签
+    criterion = nn.MultiLabelSoftMarginLoss()
 
     # create optimizer
     # optimizer_name = "SGD"
     optimizer_name = "Adam"
+    # optimizer_name = "AdamW"
 
     # Use how many data of the dataset for val, not used now
     # proportion_of_val_dataset = 0.2
@@ -96,6 +105,23 @@ if config.use_seed:
     seed_torch(seed=config.seed)
 
 # ------------------------------------dataset------------------------------------
+def rand_bbox(size, lam):
+    W = size[0]
+    H = size[1]
+    cut_rat = np.sqrt(1. - lam)
+    cut_w = np.int(W * cut_rat)
+    cut_h = np.int(H * cut_rat)
+
+    cx = np.random.randint(W)
+    cy = np.random.randint(H)
+
+    bbx1 = np.clip(cx - cut_w // 2, 0, W)
+    bby1 = np.clip(cy - cut_h // 2, 0, H)
+    bbx2 = np.clip(cx + cut_w // 2, 0, W)
+    bby2 = np.clip(cy + cut_h // 2, 0, H)
+
+    return bbx1, bby1, bbx2, bby2
+
 if config.read_data_from == "Memory":
     # create dataset
     class Leaf_train_Dataset(Dataset):
@@ -135,6 +161,40 @@ elif config.read_data_from == "Disk":
             img = cv2.imread(self.img_path + image_id)
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             img = self.transform(image=img)['image']
+            '''
+            if self.do_fmix and np.random.uniform(0., 1., size=1)[0] > 0.5:
+                with torch.no_grad():
+                    lam = np.clip(np.random.beta(self.fmix_params['alpha'], self.fmix_params['alpha']), 0.6, 0.7)
+                    mask = make_low_freq_image(self.fmix_params['decay_power'], self.fmix_params['shape'])
+                    mask = binarise_mask(mask, lam, self.fmix_params['shape'], self.fmix_params['max_soft'])
+                    fmix_ix = np.random.choice(self.df.shape[0], size=1)[0]
+                    fmix_img = get_img("{}/{}".format(self.data_root, self.df.image_id.iloc[fmix_ix]))
+                    if self.transforms:
+                        fmix_img = self.transforms(image=fmix_img)['image']
+                    mask_torch = torch.from_numpy(mask)
+                    rate = mask.sum() / self.fmix_params['shape'][0] / self.fmix_params['shape'][1]
+
+                    img = mask_torch * img + (1. - mask_torch) * fmix_img
+                    target = rate * target + (1. - rate) * self.labels[fmix_ix]
+            '''
+            ori_label = label
+            label = np.zeros(5)
+            label[ori_label] = 1.
+            if config.use_cutmix and np.random.uniform(0., 1., size=1)[0] > 0.5:
+                with torch.no_grad():
+                    cmix_ix = np.random.choice(self.csv.index, size=1)[0]
+                    cmix_img = cv2.cvtColor(cv2.imread(self.img_path + self.csv.loc[cmix_ix, 'image_id']), cv2.COLOR_BGR2RGB)
+                    cmix_img = self.transform(image=cmix_img)['image']
+
+                    lam = np.clip(np.random.beta(1, 1), 0.3, 0.4)
+                    bbx1, bby1, bbx2, bby2 = rand_bbox((config.img_size,config.img_size), lam)
+                    rate = 1 - ((bbx2 - bbx1) * (bby2 - bby1) / (
+                            config.img_size * config.img_size))
+                    img[:, bbx1:bbx2, bby1:bby2] = cmix_img[:, bbx1:bbx2, bby1:bby2]
+                    label[ori_label] = rate
+                    label[self.csv.loc[cmix_ix, 'label']] = (1. - rate)
+                    #torch.eye(n, m=None, out=None)
+                    #label = rate * label + (1. - rate) * self.csv.loc[cmix_ix, 'label']
             return img, label
 
         def __len__(self):
@@ -155,11 +215,12 @@ def train(net, train_loader, criterion, optimizer, epoch, device, log):
         optimizer.zero_grad()
 
         # forward
+        softmax = nn.Softmax(dim=1)
         output = net(imgs)
 
         # calculate loss
         #output = output.reshape(target.shape)
-        loss = criterion(output, labels)
+        loss = criterion(output, labels.long())
 
         runningLoss += loss.item()
         loss_count += 1
@@ -176,7 +237,7 @@ def train(net, train_loader, criterion, optimizer, epoch, device, log):
 
         # print loss
         # print(index)
-        if (index + 1) % 200 == 0:
+        if (index + 1) % 400 == 0:
             print("Epoch: %2d, Batch: %4d / %4d, Loss: %.3f" % (epoch + 1, index + 1, batch_num, loss.item()))
 
     avg_loss = runningLoss / loss_count
@@ -294,6 +355,8 @@ def main():
         optimizer = toptim.SGD(params, lr=config.learning_rate)
     elif config.optimizer_name == "Adam":
         optimizer = toptim.Adam(params, lr=config.learning_rate)
+    elif config.optimizer_name == "AdamW":
+        optimizer = AdamW(params, lr=config.learning_rate, weight_decay=1e-6)
 
     # 混合精度加速
     if config.use_apex:
