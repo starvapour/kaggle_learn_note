@@ -7,6 +7,7 @@ from PIL import Image
 import sys
 sys.path.insert(0, "../input/efficientnet-pytorch")
 from efficientnet_pytorch import EfficientNet
+import torch.nn as nn
 
 
 
@@ -64,7 +65,7 @@ def main():
     # net model
     #net = Leaf_net().to(device)
     net = EfficientNet.from_name('efficientnet-b4')
-    net._fc.out_features = 5
+    net._fc = nn.Linear(net._fc.in_features, 5)
     net = net.to(device)
     net.load_state_dict(torch.load(model_path))
     net.eval()
