@@ -67,8 +67,8 @@ class config:
 
     # create optimizer
     # optimizer_name = "SGD"
-    optimizer_name = "Adam"
-    # optimizer_name = "AdamW"
+    # optimizer_name = "Adam"
+    optimizer_name = "AdamW"
 
     # Use how many data of the dataset for val, not used now
     # proportion_of_val_dataset = 0.2
@@ -149,11 +149,12 @@ if config.read_data_from == "Memory":
 elif config.read_data_from == "Disk":
     # create dataset
     class Leaf_train_Dataset(Dataset):
-        def __init__(self, data_csv, img_path, transform):
+        def __init__(self, data_csv, img_path, transform, use_cutmix):
             # get lists
             self.csv = data_csv
             self.img_path = img_path
             self.transform = transform
+            self.use_cutmix = use_cutmix
 
         def __getitem__(self, index):
             image_id = self.csv.loc[index, 'image_id']
@@ -180,7 +181,7 @@ elif config.read_data_from == "Disk":
             ori_label = label
             label = np.zeros(5)
             label[ori_label] = 1.
-            if config.use_cutmix and np.random.uniform(0., 1., size=1)[0] > 0.5:
+            if self.use_cutmix and np.random.uniform(0., 1., size=1)[0] > 0.5:
                 with torch.no_grad():
                     cmix_ix = np.random.choice(self.csv.index, size=1)[0]
                     cmix_img = cv2.cvtColor(cv2.imread(self.img_path + self.csv.loc[cmix_ix, 'image_id']), cv2.COLOR_BGR2RGB)
@@ -256,7 +257,8 @@ def val(net, val_loader, criterion, optimizer, epoch, device, log, train_start):
         for index, (imgs, labels) in enumerate(val_loader):
             imgs, labels = imgs.to(device), labels.to(device)
             output = net(imgs)
-            pred = output.argmax(dim=1, keepdim=True).reshape(labels.shape)
+            pred = output.argmax(dim=1, keepdim=True).flatten()
+            labels = labels.argmax(dim=1, keepdim=True).flatten()
             assessment = torch.eq(pred, labels)
             total_len += len(pred)
             correct_len += int(assessment.sum())
@@ -319,14 +321,14 @@ def main():
 
     print("Start load train dataset:")
     if config.use_image_enhancement:
-        train_dataset = Leaf_train_Dataset(train_csv, config.train_image, transform=get_train_transforms(config.img_size))
+        train_dataset = Leaf_train_Dataset(train_csv, config.train_image, transform=get_train_transforms(config.img_size), use_cutmix = config.use_cutmix)
     else:
-        train_dataset = Leaf_train_Dataset(train_csv, config.train_image, transform=get_test_transforms(config.img_size))
+        train_dataset = Leaf_train_Dataset(train_csv, config.train_image, transform=get_test_transforms(config.img_size), use_cutmix = config.use_cutmix)
     print("length of train dataset is", len(train_dataset))
     log.write("length of train dataset is " + str(len(train_dataset)) + "\n")
 
     print("Start load val dataset:")
-    val_dataset = Leaf_train_Dataset(val_csv, config.train_image, transform=get_test_transforms(config.img_size))
+    val_dataset = Leaf_train_Dataset(val_csv, config.train_image, transform=get_test_transforms(config.img_size), use_cutmix = False)
     print("length of val dataset is", len(val_dataset))
     log.write("length of val dataset is " + str(len(val_dataset)) + "\n\n")
 
