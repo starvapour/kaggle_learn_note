@@ -11,13 +11,16 @@ from model import get_model
 from apex import amp
 from torch.optim import AdamW
 import numpy as np
+import sys
+sys.path.append("FMix-master")
+from fmix import sample_mask, make_low_freq_image, binarise_mask
 
 
 
 # ------------------------------------config------------------------------------
 class config:
     # all the seed
-    seed = 2021
+    seed = 26
     use_seed = True
 
     # input image size
@@ -29,33 +32,38 @@ class config:
     # model_name = "resnext50_32x4d"
     # model_name = "custom"
 
-    # continue train from old model, if not, load pretrain data
-    from_old_model = False
+    # continue train from old model, if not, load pretrained data
+    from_old_model = True
 
     # whether use apex or not
     use_apex = True
 
     # if true, remove noise in noise.txt in train dataset
-    remove_noise = True
+    remove_noise = False
 
     # whether only train output layer
-    only_train_output_layer = True
+    only_train_output_layer = False
+    # when only train output layer, use small train set for fast train
+    fast_train_output_layer = False
 
     # if true, do more pre-processing to change the image
     use_image_enhancement = True
 
     # if true, use cutmix
-    use_cutmix = True
+    use_cutmix = False
+
+    # if true, use fmix
+    use_fmix = True
 
     # learning rate
-    learning_rate = 3e-4
+    learning_rate = 1e-4
     # max epoch
-    epochs = 100
+    epochs = 50
     # batch size
     batchSize = 8
 
     # if acc is more than this value, start save model
-    lowest_save_acc = 0
+    lowest_save_acc = 0.868
 
     # loss function
     # criterion = nn.BCEWithLogitsLoss()
@@ -74,7 +82,7 @@ class config:
     # proportion_of_val_dataset = 0.2
 
     # the index of each 0.2 part, which part used for val, form 0 to 4
-    val_index = 4
+    val_index = 1
 
     # model output
     output_channel = 5
@@ -149,12 +157,13 @@ if config.read_data_from == "Memory":
 elif config.read_data_from == "Disk":
     # create dataset
     class Leaf_train_Dataset(Dataset):
-        def __init__(self, data_csv, img_path, transform, use_cutmix):
+        def __init__(self, data_csv, img_path, transform, use_cutmix, use_fmix):
             # get lists
             self.csv = data_csv
             self.img_path = img_path
             self.transform = transform
             self.use_cutmix = use_cutmix
+            self.use_fmix = use_fmix
 
         def __getitem__(self, index):
             image_id = self.csv.loc[index, 'image_id']
@@ -162,22 +171,7 @@ elif config.read_data_from == "Disk":
             img = cv2.imread(self.img_path + image_id)
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             img = self.transform(image=img)['image']
-            '''
-            if self.do_fmix and np.random.uniform(0., 1., size=1)[0] > 0.5:
-                with torch.no_grad():
-                    lam = np.clip(np.random.beta(self.fmix_params['alpha'], self.fmix_params['alpha']), 0.6, 0.7)
-                    mask = make_low_freq_image(self.fmix_params['decay_power'], self.fmix_params['shape'])
-                    mask = binarise_mask(mask, lam, self.fmix_params['shape'], self.fmix_params['max_soft'])
-                    fmix_ix = np.random.choice(self.df.shape[0], size=1)[0]
-                    fmix_img = get_img("{}/{}".format(self.data_root, self.df.image_id.iloc[fmix_ix]))
-                    if self.transforms:
-                        fmix_img = self.transforms(image=fmix_img)['image']
-                    mask_torch = torch.from_numpy(mask)
-                    rate = mask.sum() / self.fmix_params['shape'][0] / self.fmix_params['shape'][1]
 
-                    img = mask_torch * img + (1. - mask_torch) * fmix_img
-                    target = rate * target + (1. - rate) * self.labels[fmix_ix]
-            '''
             ori_label = label
             label = np.zeros(5)
             label[ori_label] = 1.
@@ -194,8 +188,24 @@ elif config.read_data_from == "Disk":
                     img[:, bbx1:bbx2, bby1:bby2] = cmix_img[:, bbx1:bbx2, bby1:bby2]
                     label[ori_label] = rate
                     label[self.csv.loc[cmix_ix, 'label']] = (1. - rate)
-                    #torch.eye(n, m=None, out=None)
-                    #label = rate * label + (1. - rate) * self.csv.loc[cmix_ix, 'label']
+
+            if self.use_fmix and np.random.uniform(0., 1., size=1)[0] > 0.5:
+                with torch.no_grad():
+                    lam = np.clip(np.random.beta(1, 1), 0.6, 0.7)
+                    mask = make_low_freq_image(3, (config.img_size,config.img_size))
+                    mask = binarise_mask(mask, lam, (config.img_size,config.img_size), True)
+                    fmix_ix = np.random.choice(self.csv.index, size=1)[0]
+                    fmix_img = cv2.cvtColor(cv2.imread(self.img_path + self.csv.loc[fmix_ix, 'image_id']),
+                                            cv2.COLOR_BGR2RGB)
+                    fmix_img = self.transform(image=fmix_img)['image']
+                    mask_torch = torch.from_numpy(mask)
+                    rate = mask.sum() / config.img_size / config.img_size
+
+                    mask_torch = torch.as_tensor(mask_torch, dtype=torch.float32)
+                    img = mask_torch * img + (1. - mask_torch) * fmix_img
+                    label[ori_label] = rate
+                    label[self.csv.loc[fmix_ix, 'label']] = (1. - rate)
+
             return img, label
 
         def __len__(self):
@@ -307,6 +317,11 @@ def main():
     val_csv = original_csv_data.iloc[config.val_index * part_len:(config.val_index+1) * part_len]
     val_csv = val_csv.reset_index(drop=True)
 
+    # for fast train output layer only
+    if config.only_train_output_layer and config.fast_train_output_layer:
+        train_csv = train_csv[:1000]
+        val_csv = val_csv[:200]
+
     # remove noise data in noise file
     if config.remove_noise:
         with open(config.noise_path) as noise_file:
@@ -321,14 +336,14 @@ def main():
 
     print("Start load train dataset:")
     if config.use_image_enhancement:
-        train_dataset = Leaf_train_Dataset(train_csv, config.train_image, transform=get_train_transforms(config.img_size), use_cutmix = config.use_cutmix)
+        train_dataset = Leaf_train_Dataset(train_csv, config.train_image, transform=get_train_transforms(config.img_size), use_cutmix = config.use_cutmix, use_fmix = config.use_fmix)
     else:
-        train_dataset = Leaf_train_Dataset(train_csv, config.train_image, transform=get_test_transforms(config.img_size), use_cutmix = config.use_cutmix)
+        train_dataset = Leaf_train_Dataset(train_csv, config.train_image, transform=get_test_transforms(config.img_size), use_cutmix = config.use_cutmix, use_fmix = config.use_fmix)
     print("length of train dataset is", len(train_dataset))
     log.write("length of train dataset is " + str(len(train_dataset)) + "\n")
 
     print("Start load val dataset:")
-    val_dataset = Leaf_train_Dataset(val_csv, config.train_image, transform=get_test_transforms(config.img_size), use_cutmix = False)
+    val_dataset = Leaf_train_Dataset(val_csv, config.train_image, transform=get_test_transforms(config.img_size), use_cutmix = False, use_fmix = False)
     print("length of val dataset is", len(val_dataset))
     log.write("length of val dataset is " + str(len(val_dataset)) + "\n\n")
 
