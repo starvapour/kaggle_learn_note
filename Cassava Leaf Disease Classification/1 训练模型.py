@@ -33,7 +33,7 @@ class config:
     # model_name = "custom"
 
     # continue train from old model, if not, load pretrained data
-    from_old_model = True
+    from_old_model = False
 
     # whether use apex or not
     use_apex = True
@@ -56,14 +56,14 @@ class config:
     use_fmix = True
 
     # learning rate
-    learning_rate = 1e-4
+    learning_rate = 3e-4
     # max epoch
     epochs = 50
     # batch size
     batchSize = 8
 
     # if acc is more than this value, start save model
-    lowest_save_acc = 0.868
+    lowest_save_acc = 0
 
     # loss function
     # criterion = nn.BCEWithLogitsLoss()
