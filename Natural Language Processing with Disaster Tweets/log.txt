@@ -1,0 +1,410 @@
+For Epoch:  1, Average Loss: 0.245
+accuracy: 0.57034969627319
+Model saved in epoch 1, acc: 0.57034969627319.
+Time pass: 0 hours, 0 minutes, 3 seconds.
+
+For Epoch:  2, Average Loss: 0.222
+accuracy: 0.7525857823017567
+Model saved in epoch 2, acc: 0.7525857823017567.
+Time pass: 0 hours, 0 minutes, 6 seconds.
+
+For Epoch:  3, Average Loss: 0.173
+accuracy: 0.7607946150057462
+Model saved in epoch 3, acc: 0.7607946150057462.
+Time pass: 0 hours, 0 minutes, 8 seconds.
+
+For Epoch:  4, Average Loss: 0.153
+accuracy: 0.7783615169922837
+Model saved in epoch 4, acc: 0.7783615169922837.
+Time pass: 0 hours, 0 minutes, 11 seconds.
+
+For Epoch:  5, Average Loss: 0.148
+accuracy: 0.7786898703004432
+Model saved in epoch 5, acc: 0.7786898703004432.
+Time pass: 0 hours, 0 minutes, 14 seconds.
+
+For Epoch:  6, Average Loss: 0.141
+accuracy: 0.7724511574454113
+Time pass: 0 hours, 0 minutes, 17 seconds.
+
+For Epoch:  7, Average Loss: 0.136
+accuracy: 0.7804958134953209
+Model saved in epoch 7, acc: 0.7804958134953209.
+Time pass: 0 hours, 0 minutes, 20 seconds.
+
+For Epoch:  8, Average Loss: 0.131
+accuracy: 0.7801674601871614
+Time pass: 0 hours, 0 minutes, 22 seconds.
+
+For Epoch:  9, Average Loss: 0.129
+accuracy: 0.7758988671810868
+Time pass: 0 hours, 0 minutes, 25 seconds.
+
+For Epoch: 10, Average Loss: 0.127
+accuracy: 0.7842718765391561
+Model saved in epoch 10, acc: 0.7842718765391561.
+Time pass: 0 hours, 0 minutes, 28 seconds.
+
+For Epoch: 11, Average Loss: 0.123
+accuracy: 0.7808241668034805
+Time pass: 0 hours, 0 minutes, 31 seconds.
+
+For Epoch: 12, Average Loss: 0.117
+accuracy: 0.7834509932687572
+Time pass: 0 hours, 0 minutes, 34 seconds.
+
+For Epoch: 13, Average Loss: 0.117
+accuracy: 0.7808241668034805
+Time pass: 0 hours, 0 minutes, 36 seconds.
+
+For Epoch: 14, Average Loss: 0.113
+accuracy: 0.7837793465769167
+Time pass: 0 hours, 0 minutes, 39 seconds.
+
+For Epoch: 15, Average Loss: 0.111
+accuracy: 0.7809883434575603
+Time pass: 0 hours, 0 minutes, 42 seconds.
+
+For Epoch: 16, Average Loss: 0.108
+accuracy: 0.7854211131177147
+Model saved in epoch 16, acc: 0.7854211131177147.
+Time pass: 0 hours, 0 minutes, 45 seconds.
+
+For Epoch: 17, Average Loss: 0.109
+accuracy: 0.7834509932687572
+Time pass: 0 hours, 0 minutes, 47 seconds.
+
+For Epoch: 18, Average Loss: 0.106
+accuracy: 0.782794286652438
+Time pass: 0 hours, 0 minutes, 50 seconds.
+
+For Epoch: 19, Average Loss: 0.100
+accuracy: 0.7821375800361189
+Time pass: 0 hours, 0 minutes, 53 seconds.
+
+For Epoch: 20, Average Loss: 0.101
+accuracy: 0.7816450500738795
+Time pass: 0 hours, 0 minutes, 56 seconds.
+
+For Epoch: 21, Average Loss: 0.097
+accuracy: 0.7783615169922837
+Time pass: 0 hours, 0 minutes, 58 seconds.
+
+For Epoch: 22, Average Loss: 0.096
+accuracy: 0.7783615169922837
+Time pass: 0 hours, 1 minutes, 1 seconds.
+
+For Epoch: 23, Average Loss: 0.092
+accuracy: 0.7722869807913315
+Time pass: 0 hours, 1 minutes, 4 seconds.
+
+For Epoch: 24, Average Loss: 0.099
+accuracy: 0.7732720407158102
+Time pass: 0 hours, 1 minutes, 7 seconds.
+
+For Epoch: 25, Average Loss: 0.099
+accuracy: 0.7755705138729273
+Time pass: 0 hours, 1 minutes, 10 seconds.
+
+For Epoch: 26, Average Loss: 0.085
+accuracy: 0.7791824002626826
+Time pass: 0 hours, 1 minutes, 12 seconds.
+
+For Epoch: 27, Average Loss: 0.084
+accuracy: 0.7686750944015761
+Time pass: 0 hours, 1 minutes, 15 seconds.
+
+For Epoch: 28, Average Loss: 0.080
+accuracy: 0.770316860942374
+Time pass: 0 hours, 1 minutes, 18 seconds.
+
+For Epoch: 29, Average Loss: 0.078
+accuracy: 0.7763913971433262
+Time pass: 0 hours, 1 minutes, 21 seconds.
+
+For Epoch: 30, Average Loss: 0.082
+accuracy: 0.7711377442127729
+Time pass: 0 hours, 1 minutes, 23 seconds.
+
+For Epoch: 31, Average Loss: 0.085
+accuracy: 0.7750779839106879
+Time pass: 0 hours, 1 minutes, 26 seconds.
+
+For Epoch: 32, Average Loss: 0.077
+accuracy: 0.7739287473321294
+Time pass: 0 hours, 1 minutes, 29 seconds.
+
+For Epoch: 33, Average Loss: 0.069
+accuracy: 0.767197504514858
+Time pass: 0 hours, 1 minutes, 32 seconds.
+
+For Epoch: 34, Average Loss: 0.065
+accuracy: 0.7732720407158102
+Time pass: 0 hours, 1 minutes, 35 seconds.
+
+For Epoch: 35, Average Loss: 0.069
+accuracy: 0.75783943523231
+Time pass: 0 hours, 1 minutes, 37 seconds.
+
+For Epoch: 36, Average Loss: 0.065
+accuracy: 0.7745854539484486
+Time pass: 0 hours, 1 minutes, 40 seconds.
+
+For Epoch: 37, Average Loss: 0.065
+accuracy: 0.7391232966672139
+Time pass: 0 hours, 1 minutes, 43 seconds.
+
+For Epoch: 38, Average Loss: 0.066
+accuracy: 0.7770481037596454
+Time pass: 0 hours, 1 minutes, 46 seconds.
+
+For Epoch: 39, Average Loss: 0.059
+accuracy: 0.766376621244459
+Time pass: 0 hours, 1 minutes, 48 seconds.
+
+For Epoch: 40, Average Loss: 0.057
+accuracy: 0.7688392710556559
+Time pass: 0 hours, 1 minutes, 51 seconds.
+
+For Epoch: 41, Average Loss: 0.050
+accuracy: 0.764078148087342
+Time pass: 0 hours, 1 minutes, 54 seconds.
+
+For Epoch: 42, Average Loss: 0.046
+accuracy: 0.7736003940239697
+Time pass: 0 hours, 1 minutes, 56 seconds.
+
+For Epoch: 43, Average Loss: 0.045
+accuracy: 0.7644065013955016
+Time pass: 0 hours, 1 minutes, 59 seconds.
+
+For Epoch: 44, Average Loss: 0.047
+accuracy: 0.7584961418486291
+Time pass: 0 hours, 2 minutes, 2 seconds.
+
+For Epoch: 45, Average Loss: 0.047
+accuracy: 0.7698243309801346
+Time pass: 0 hours, 2 minutes, 5 seconds.
+
+For Epoch: 46, Average Loss: 0.043
+accuracy: 0.772615334099491
+Time pass: 0 hours, 2 minutes, 8 seconds.
+
+For Epoch: 47, Average Loss: 0.059
+accuracy: 0.7583319651945494
+Time pass: 0 hours, 2 minutes, 10 seconds.
+
+For Epoch: 48, Average Loss: 0.041
+accuracy: 0.7685109177474964
+Time pass: 0 hours, 2 minutes, 13 seconds.
+
+For Epoch: 49, Average Loss: 0.036
+accuracy: 0.7717944508290921
+Time pass: 0 hours, 2 minutes, 16 seconds.
+
+For Epoch: 50, Average Loss: 0.035
+accuracy: 0.7698243309801346
+Time pass: 0 hours, 2 minutes, 19 seconds.
+
+For Epoch: 51, Average Loss: 0.052
+accuracy: 0.7722869807913315
+Time pass: 0 hours, 2 minutes, 22 seconds.
+
+For Epoch: 52, Average Loss: 0.035
+accuracy: 0.7711377442127729
+Time pass: 0 hours, 2 minutes, 24 seconds.
+
+For Epoch: 53, Average Loss: 0.030
+accuracy: 0.7616154982761452
+Time pass: 0 hours, 2 minutes, 27 seconds.
+
+For Epoch: 54, Average Loss: 0.030
+accuracy: 0.7709735675586932
+Time pass: 0 hours, 2 minutes, 30 seconds.
+
+For Epoch: 55, Average Loss: 0.030
+accuracy: 0.7522574289935972
+Time pass: 0 hours, 2 minutes, 33 seconds.
+
+For Epoch: 56, Average Loss: 0.029
+accuracy: 0.7573469052700706
+Time pass: 0 hours, 2 minutes, 36 seconds.
+
+For Epoch: 57, Average Loss: 0.028
+accuracy: 0.7621080282383845
+Time pass: 0 hours, 2 minutes, 38 seconds.
+
+For Epoch: 58, Average Loss: 0.026
+accuracy: 0.7402725332457725
+Time pass: 0 hours, 2 minutes, 41 seconds.
+
+For Epoch: 59, Average Loss: 0.029
+accuracy: 0.7568543753078312
+Time pass: 0 hours, 2 minutes, 44 seconds.
+
+For Epoch: 60, Average Loss: 0.025
+accuracy: 0.7603020850435068
+Time pass: 0 hours, 2 minutes, 47 seconds.
+
+For Epoch: 61, Average Loss: 0.027
+accuracy: 0.7387949433590544
+Time pass: 0 hours, 2 minutes, 49 seconds.
+
+For Epoch: 62, Average Loss: 0.040
+accuracy: 0.7368248235100968
+Time pass: 0 hours, 2 minutes, 52 seconds.
+
+For Epoch: 63, Average Loss: 0.032
+accuracy: 0.7588244951567887
+Time pass: 0 hours, 2 minutes, 55 seconds.
+
+For Epoch: 64, Average Loss: 0.025
+accuracy: 0.7540633721884747
+Time pass: 0 hours, 2 minutes, 58 seconds.
+
+For Epoch: 65, Average Loss: 0.027
+accuracy: 0.7576752585782301
+Time pass: 0 hours, 3 minutes, 0 seconds.
+
+For Epoch: 66, Average Loss: 0.025
+accuracy: 0.7594812017731079
+Time pass: 0 hours, 3 minutes, 3 seconds.
+
+For Epoch: 67, Average Loss: 0.023
+accuracy: 0.7614513216220653
+Time pass: 0 hours, 3 minutes, 6 seconds.
+
+For Epoch: 68, Average Loss: 0.022
+accuracy: 0.7553767854211131
+Time pass: 0 hours, 3 minutes, 9 seconds.
+
+For Epoch: 69, Average Loss: 0.022
+accuracy: 0.7644065013955016
+Time pass: 0 hours, 3 minutes, 12 seconds.
+
+For Epoch: 70, Average Loss: 0.022
+accuracy: 0.7512723690691183
+Time pass: 0 hours, 3 minutes, 15 seconds.
+
+For Epoch: 71, Average Loss: 0.022
+accuracy: 0.7607946150057462
+Time pass: 0 hours, 3 minutes, 17 seconds.
+
+For Epoch: 72, Average Loss: 0.022
+accuracy: 0.7639139714332622
+Time pass: 0 hours, 3 minutes, 20 seconds.
+
+For Epoch: 73, Average Loss: 0.022
+accuracy: 0.7571827286159908
+Time pass: 0 hours, 3 minutes, 23 seconds.
+
+For Epoch: 74, Average Loss: 0.021
+accuracy: 0.7591528484649482
+Time pass: 0 hours, 3 minutes, 26 seconds.
+
+For Epoch: 75, Average Loss: 0.022
+accuracy: 0.7483171892956821
+Time pass: 0 hours, 3 minutes, 28 seconds.
+
+For Epoch: 76, Average Loss: 0.022
+accuracy: 0.7496306025283205
+Time pass: 0 hours, 3 minutes, 31 seconds.
+
+For Epoch: 77, Average Loss: 0.021
+accuracy: 0.762436381546544
+Time pass: 0 hours, 3 minutes, 34 seconds.
+
+For Epoch: 78, Average Loss: 0.023
+accuracy: 0.7596453784271876
+Time pass: 0 hours, 3 minutes, 37 seconds.
+
+For Epoch: 79, Average Loss: 0.023
+accuracy: 0.7557051387292727
+Time pass: 0 hours, 3 minutes, 40 seconds.
+
+For Epoch: 80, Average Loss: 0.023
+accuracy: 0.7519290756854375
+Time pass: 0 hours, 3 minutes, 43 seconds.
+
+For Epoch: 81, Average Loss: 0.037
+accuracy: 0.7647348547036611
+Time pass: 0 hours, 3 minutes, 45 seconds.
+
+For Epoch: 82, Average Loss: 0.028
+accuracy: 0.7626005582006239
+Time pass: 0 hours, 3 minutes, 48 seconds.
+
+For Epoch: 83, Average Loss: 0.023
+accuracy: 0.7558693153833524
+Time pass: 0 hours, 3 minutes, 51 seconds.
+
+For Epoch: 84, Average Loss: 0.022
+accuracy: 0.7645706780495813
+Time pass: 0 hours, 3 minutes, 54 seconds.
+
+For Epoch: 85, Average Loss: 0.023
+accuracy: 0.7594812017731079
+Time pass: 0 hours, 3 minutes, 57 seconds.
+
+For Epoch: 86, Average Loss: 0.021
+accuracy: 0.7542275488425546
+Time pass: 0 hours, 4 minutes, 0 seconds.
+
+For Epoch: 87, Average Loss: 0.022
+accuracy: 0.7440485962896076
+Time pass: 0 hours, 4 minutes, 2 seconds.
+
+For Epoch: 88, Average Loss: 0.023
+accuracy: 0.7438844196355279
+Time pass: 0 hours, 4 minutes, 5 seconds.
+
+For Epoch: 89, Average Loss: 0.023
+accuracy: 0.7622722048924643
+Time pass: 0 hours, 4 minutes, 8 seconds.
+
+For Epoch: 90, Average Loss: 0.022
+accuracy: 0.7573469052700706
+Time pass: 0 hours, 4 minutes, 11 seconds.
+
+For Epoch: 91, Average Loss: 0.021
+accuracy: 0.7504514857987195
+Time pass: 0 hours, 4 minutes, 13 seconds.
+
+For Epoch: 92, Average Loss: 0.021
+accuracy: 0.750779839106879
+Time pass: 0 hours, 4 minutes, 16 seconds.
+
+For Epoch: 93, Average Loss: 0.021
+accuracy: 0.7560334920374323
+Time pass: 0 hours, 4 minutes, 19 seconds.
+
+For Epoch: 94, Average Loss: 0.021
+accuracy: 0.7493022492201609
+Time pass: 0 hours, 4 minutes, 22 seconds.
+
+For Epoch: 95, Average Loss: 0.022
+accuracy: 0.7540633721884747
+Time pass: 0 hours, 4 minutes, 24 seconds.
+
+For Epoch: 96, Average Loss: 0.020
+accuracy: 0.7550484321129536
+Time pass: 0 hours, 4 minutes, 27 seconds.
+
+For Epoch: 97, Average Loss: 0.021
+accuracy: 0.7527499589558365
+Time pass: 0 hours, 4 minutes, 30 seconds.
+
+For Epoch: 98, Average Loss: 0.021
+accuracy: 0.7665407978985388
+Time pass: 0 hours, 4 minutes, 33 seconds.
+
+For Epoch: 99, Average Loss: 0.021
+accuracy: 0.7502873091446396
+Time pass: 0 hours, 4 minutes, 35 seconds.
+
+For Epoch: 100, Average Loss: 0.020
+accuracy: 0.7506156624527992
+Time pass: 0 hours, 4 minutes, 38 seconds.
+
+Final saved model is epoch 16, acc: 0.7854211131177147
+Done.
