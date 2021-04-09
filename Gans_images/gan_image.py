@@ -1,19 +1,15 @@
-import pandas as pd
 from torch.utils.data import Dataset, DataLoader
 import time
 from torch.optim import AdamW
-import numpy as np
 from model import *
-from torchvision import transforms
 from torchvision.utils import save_image
 import random
 from torch.autograd import Variable
 import os
 import cv2
-from PIL import Image
-from albumentations import RandomResizedCrop, Normalize, Compose, Resize
+from albumentations import Normalize, Compose, Resize
 from albumentations.pytorch import ToTensorV2
-
+from apex import amp
 
 # ------------------------------------config------------------------------------
 class config:
@@ -24,12 +20,15 @@ class config:
     # 配置是否要从磁盘加载之前保存的模式参数继续训练
     from_old_model = False
 
-    # 运行多少个epoch之后停止
-    epochs = 20000
-    # 配置batch size
-    batchSize = 16
+    # 使用apex加速训练
+    use_apex = True
 
-    # how big the image used
+    # 运行多少个epoch之后停止
+    epochs = 10000
+    # 配置batch size
+    batchSize = 32
+
+    # 训练图片输入分辨率
     img_size = 265
 
     # 配置喂入生成器的随机正态分布种子数有多少维（如果改动，需要在model中修改网络对应参数）
@@ -43,8 +42,7 @@ class config:
     D_model_path = "D_model.pth"
 
     # 损失函数
-    # 使用二分类交叉熵损失函数
-    #criterion = nn.BCELoss()
+    # 使用均方差损失函数
     criterion = nn.MSELoss()
 
     # ------------------------------------路径配置------------------------------------
@@ -68,9 +66,9 @@ if config.use_seed:
 
 # -----------------------------------transforms------------------------------------
 def get_transforms(img_size):
+    # 缩放分辨率并转换到0-1之间
     return Compose(
-        [#RandomResizedCrop(img_size, img_size),
-         Resize(img_size, img_size),
+        [Resize(img_size, img_size),
          Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5), max_pixel_value=255.0, p=1.0),
          ToTensorV2(p=1.0)]
     )
@@ -111,9 +109,6 @@ def main():
     for path, dirs, files in os.walk(config.img_path, topdown=False):
         file_list = list(files)
 
-    # 缩小训练集，用于快速检测运行Bug
-    # file_list = file_list[:16]
-
     train_dataset = image_dataset(file_list, config.img_path, transform=get_transforms(config.img_size))
     train_loader = DataLoader(dataset=train_dataset, batch_size=config.batchSize, shuffle=True)
 
@@ -122,11 +117,16 @@ def main():
     D_model = get_D_model(config.from_old_model, device, config.D_model_path)
 
     # 定义G和D的优化器，此处使用AdamW优化器
-    G_optimizer = AdamW(G_model.parameters(), lr=1e-4, weight_decay=1e-6)
-    D_optimizer = AdamW(D_model.parameters(), lr=1e-4, weight_decay=1e-6)
+    G_optimizer = AdamW(G_model.parameters(), lr=3e-4, weight_decay=1e-6)
+    D_optimizer = AdamW(D_model.parameters(), lr=3e-4, weight_decay=1e-6)
 
     # 损失函数
     criterion = config.criterion
+
+    # 混合精度加速
+    if config.use_apex:
+        G_model, G_optimizer = amp.initialize(G_model, G_optimizer, opt_level="O1")
+        D_model, D_optimizer = amp.initialize(D_model, D_optimizer, opt_level="O1")
 
     # 记录训练时间
     train_start = time.time()
@@ -188,7 +188,11 @@ def main():
             # 重置优化器
             D_optimizer.zero_grad()
             # 用损失更新判别器D
-            D_loss.backward()
+            if config.use_apex:
+                with amp.scale_loss(D_loss, D_optimizer) as scaled_loss:
+                    scaled_loss.backward()
+            else:
+                D_loss.backward()
             D_optimizer.step()
 
             # 如果之前交换过标签，此时再换回来
@@ -208,18 +212,21 @@ def main():
             # 重置优化器
             G_optimizer.zero_grad()
             # 利用损失更新生成器G
-            G_loss.backward()
+            if config.use_apex:
+                with amp.scale_loss(G_loss, G_optimizer) as scaled_loss:
+                    scaled_loss.backward()
+            else:
+                G_loss.backward()
             G_optimizer.step()
 
             # 打印程序工作进度
             if (index + 1) % 200 == 0:
                 print("Epoch: %2d, Batch: %4d / %4d" % (epoch + 1, index + 1, batch_num))
 
-        # 在每个epoch结束时保存模型参数到磁盘文件
-        torch.save(G_model.state_dict(), config.G_model_path)
-        torch.save(D_model.state_dict(), config.D_model_path)
-
         if (epoch+1) % 10 == 0:
+            # 在每N个epoch结束时保存模型参数到磁盘文件
+            torch.save(G_model.state_dict(), config.G_model_path)
+            torch.save(D_model.state_dict(), config.D_model_path)
             # 在每N个epoch结束时输出一组生成器产生的图片到输出文件夹
             img_seeds = torch.randn(config.batchSize, config.img_seed_dim).to(device)
             fake_images = G_model(img_seeds).cuda().data

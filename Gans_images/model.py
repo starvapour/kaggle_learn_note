@@ -18,30 +18,30 @@ class G_net(nn.Module):
             nn.LeakyReLU(0.2),
         )
         self.gen = nn.Sequential(
-            # 反卷积扩张尺寸
-            nn.ConvTranspose2d(128, 128, 4, 1, 0),
+            # 反卷积扩张尺寸，保持kernel size能够被stride整除来减少棋盘效应
+            nn.ConvTranspose2d(128, 128, kernel_size=4, stride=1, padding=0),
             nn.BatchNorm2d(128),
             nn.LeakyReLU(0.2),
-            nn.ConvTranspose2d(128, 256, 4, 2, 1),
+            nn.ConvTranspose2d(128, 256, kernel_size=4, stride=2, padding=1),
             nn.BatchNorm2d(256),
             nn.LeakyReLU(0.2),
-            nn.ConvTranspose2d(256, 128, 4, 2, 1),
+            nn.ConvTranspose2d(256, 128, kernel_size=4, stride=2, padding=1),
             nn.BatchNorm2d(128),
             nn.LeakyReLU(0.2),
-            nn.ConvTranspose2d(128, 64, 4, 2, 1),
+            nn.ConvTranspose2d(128, 64, kernel_size=4, stride=2, padding=1),
             nn.BatchNorm2d(64),
             nn.LeakyReLU(0.2),
-            nn.ConvTranspose2d(64, 32, 6, 3, 1),
+            nn.ConvTranspose2d(64, 32, kernel_size=6, stride=3, padding=1),
             nn.BatchNorm2d(32),
             nn.LeakyReLU(0.2),
-            nn.ConvTranspose2d(32, 16, 5, 1, 1),
+            nn.ConvTranspose2d(32, 16, kernel_size=5, stride=1, padding=1),
             nn.BatchNorm2d(16),
             nn.LeakyReLU(0.2),
-            # 正卷积阻止棋盘效应
-            nn.Conv2d(16, 8, 5, 1, 1),
+            # 尾部添加正卷积压缩减少棋盘效应
+            nn.Conv2d(16, 8, kernel_size=5, stride=1, padding=1),
             nn.BatchNorm2d(8),
             nn.LeakyReLU(0.2),
-            nn.Conv2d(8, 3, 3, 1, 1),
+            nn.Conv2d(8, 3, kernel_size=3, stride=1, padding=1),
 
 
             # # 反卷积扩张尺寸
@@ -70,7 +70,7 @@ class G_net(nn.Module):
         return output
 
 
-# 根据生成器的配置返回对应的模型
+# 返回对应的生成器
 def get_G_model(from_old_model, device, model_path):
     model = G_net()
     # 从磁盘加载之前保存的模型参数
@@ -99,18 +99,18 @@ class D_net(nn.Module):
     def __init__(self):
         super(D_net,self).__init__()
         self.features = nn.Sequential(
-            nn.Conv2d(3, 64, 5, 3, 1, bias=False),
+            nn.Conv2d(3, 64, kernel_size=5, stride=3, padding=1, bias=False),
             nn.LeakyReLU(0.2, True),
-            nn.Conv2d(64, 128, 4, 2, 1, bias=False),
+            nn.Conv2d(64, 128, kernel_size=4, stride=2, padding=1, bias=False),
             nn.BatchNorm2d(128),
             nn.LeakyReLU(0.2, True),
-            nn.Conv2d(128, 256, 4, 2, 1, bias=False),
+            nn.Conv2d(128, 256, kernel_size=4, stride=2, padding=1, bias=False),
             nn.BatchNorm2d(256),
             nn.LeakyReLU(0.2, True),
-            nn.Conv2d(256, 512, 4, 2, 1, bias=False),
+            nn.Conv2d(256, 512, kernel_size=4, stride=2, padding=1, bias=False),
             nn.BatchNorm2d(512),
             nn.LeakyReLU(0.2, True),
-            nn.Conv2d(512, 16, 4, 1, 0, bias=False),
+            nn.Conv2d(512, 16, kernel_size=4, stride=1, padding=0, bias=False),
             nn.BatchNorm2d(16),
             nn.LeakyReLU(0.2, True),
         )
